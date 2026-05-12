@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kyzikos Kosu Takvimi</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
+header { background: #1a73e8; color: white; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+header h1 { font-size: 20px; font-weight: 500; }
+header span { font-size: 22px; }
+.container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.cal-nav h2 { font-size: 20px; font-weight: 500; }
+.nav-btn { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 14px; }
+.nav-btn:hover { background: #f0f0f0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 32px; }
+.day-label { text-align: center; font-size: 12px; font-weight: 500; color: #666; padding: 8px 0; }
+.day-cell { min-height: 80px; background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px; }
+.day-cell.other-month { background: #fafafa; opacity: 0.6; }
+.day-cell.today { border-color: #1a73e8; border-width: 2px; }
+.day-num { font-size: 12px; font-weight: 500; color: #666; margin-bottom: 4px; }
+.race-pill { font-size: 10px; background: #e8f0fe; color: #1a56b0; border-radius: 4px; padding: 2px 6px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.race-pill:hover { background: #c5d8fb; }
+.section-title { font-size: 18px; font-weight: 500; margin-bottom: 16px; color: #1a1a1a; }
+.form-card { background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 32px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+label { font-size: 13px; color: #666; }
+input, select { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; font-family: inherit; }
+input:focus, select:focus { border-color: #1a73e8; }
+.submit-btn { margin-top: 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 14px; cursor: pointer; font-weight: 500; width: 100%; }
+.submit-btn:hover { background: #1557b0; }
+.submit-btn:disabled { background: #aaa; cursor: not-allowed; }
+.reg-list { display: flex; flex-direction: column; gap: 10px; }
+.reg-card { background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
+.reg-avatar { width: 40px; height: 40px; border-radius: 50%; background: #e8f0fe; color: #1a56b0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.reg-info { flex: 1; }
+.reg-name { font-size: 15px; font-weight: 500; }
+.reg-detail { font-size: 12px; color: #666; margin-top: 3px; }
+.reg-chips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-size: 11px; background: #e8f0fe; color: #1a56b0; border-radius: 4px; padding: 2px 8px; }
+.dist-badge { font-size: 12px; background: #e6f4ea; color: #1e6b3a; border-radius: 6px; padding: 4px 10px; }
+.edit-btn { font-size: 11px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; color: #666; }
+.edit-btn:hover { background: #f5f5f5; }
+.empty { text-align: center; color: #999; padding: 32px; font-size: 14px; }
+.loading { text-align: center; color: #999; padding: 32px; font-size: 14px; }
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: white; border-radius: 16px; padding: 24px; max-width: 380px; width: 90%; }
+.modal h3 { font-size: 17px; font-weight: 500; margin-bottom: 14px; }
+.modal-row { display: flex; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+.modal-label { color: #666; min-width: 90px; }
+.modal-close { margin-top: 16px; width: 100%; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 14px; }
+.modal-close:hover { background: #f0f0f0; }
+.edit-modal { background: white; border-radius: 16px; padding: 24px; max-width: 420px; width: 90%; }
+.edit-modal h3 { font-size: 17px; font-weight: 500; margin-bottom: 16px; }
+.edit-form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.edit-actions { display: flex; gap: 8px; margin-top: 16px; }
+.save-btn { flex: 1; background: #1a73e8; color: white; border: none; border-radius: 8px; padding: 10px; font-size: 14px; cursor: pointer; font-weight: 500; }
+.save-btn:hover { background: #1557b0; }
+.delete-btn { background: #fce8e6; color: #c5221f; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+.delete-btn:hover { background: #f5c6c3; }
+.cancel-btn { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; color: #666; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a73e8; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 200; display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <span>🏃</span>
+  <h1>Kyzikos Kosu Takvimi</h1>
+</header>
+
+<div class="container">
+  <div class="cal-nav">
+    <button class="nav-btn" onclick="changeMonth(-1)">&#8592;</button>
+    <h2 id="cal-title"></h2>
+    <button class="nav-btn" onclick="changeMonth(1)">&#8594;</button>
+  </div>
+
+  <div class="cal-grid" id="cal-grid">
+    <div class="day-label">Pzt</div>
+    <div class="day-label">Sal</div>
+    <div class="day-label">Çar</div>
+    <div class="day-label">Per</div>
+    <div class="day-label">Cum</div>
+    <div class="day-label">Cmt</div>
+    <div class="day-label">Paz</div>
+  </div>
+
+  <div class="section-title">&#43; Yarış Ekle / Kayıt Ol</div>
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Adınız</label>
+        <input type="text" id="f-name" placeholder="Ahmet Yılmaz" />
+      </div>
+      <div class="form-group">
+        <label>Yarış Adı</label>
+        <input type="text" id="f-race" placeholder="İstanbul Maratonu" />
+      </div>
+      <div class="form-group">
+        <label>Tarih</label>
+        <input type="date" id="f-date" />
+      </div>
+      <div class="form-group">
+        <label>Şehir</label>
+        <input type="text" id="f-city" placeholder="İstanbul" />
+      </div>
+      <div class="form-group">
+        <label>Mesafe</label>
+        <select id="f-dist" onchange="toggleCustomDist(this)">
+          <option>5 km</option>
+          <option>10 km</option>
+          <option>Yarı Maraton (21 km)</option>
+          <option>Maraton (42 km)</option>
+          <option>Ultra Maraton</option>
+          <option>Diğer</option>
+        </select>
+        <input type="text" id="f-dist-custom" placeholder="Mesafeyi yaz (örn: 30 km)" style="display:none; margin-top:8px;" />
+      </div>
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="addRace()">Kaydet</button>
+  </div>
+
+  <div class="section-title">&#128101; Tüm Kayıtlar</div>
+  <div class="reg-list" id="reg-list">
+    <div class="loading">Yükleniyor...</div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="m-title"></h3>
+    <div class="modal-row"><span class="modal-label">Tarih</span><span id="m-date"></span></div>
+    <div class="modal-row"><span class="modal-label">Şehir</span><span id="m-city"></span></div>
+    <div class="modal-row"><span class="modal-label">Mesafe</span><span id="m-dist"></span></div>
+    <div class="modal-row"><span class="modal-label">Katılımcılar</span></div>
+    <div id="m-parts" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;"></div>
+    <button class="modal-close" onclick="closeModal()">Kapat</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="edit-modal">
+  <div class="edit-modal">
+    <h3>Kaydı Düzenle</h3>
+    <input type="hidden" id="e-id" />
+    <div class="edit-form-group">
+      <label>Yarış Adı</label>
+      <input type="text" id="e-race" />
+    </div>
+    <div class="edit-form-group">
+      <label>Tarih</label>
+      <input type="date" id="e-date" />
+    </div>
+    <div class="edit-form-group">
+      <label>Şehir</label>
+      <input type="text" id="e-city" />
+    </div>
+    <div class="edit-form-group">
+      <label>Mesafe</label>
+      <input type="text" id="e-dist" placeholder="örn: 30 km" />
+    </div>
+    <div class="edit-actions">
+      <button class="cancel-btn" onclick="closeEditModal()">İptal</button>
+      <button class="delete-btn" onclick="deleteRace()">Sil</button>
+      <button class="save-btn" onclick="saveEdit()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCagK10uWeUaJcw3GNOkmxG3C3bvedBiMk",
+  authDomain: "kyzikos-kosu-takvimi.firebaseapp.com",
+  projectId: "kyzikos-kosu-takvimi",
+  storageBucket: "kyzikos-kosu-takvimi.firebasestorage.app",
+  messagingSenderId: "686399589532",
+  appId: "1:686399589532:web:5ca6d008b7b3fa8539f159"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let raceDocs = [];
+let currentDate = new Date();
+
+function getInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+window.changeMonth = function(dir) {
+  currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + dir, 1);
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  document.getElementById('cal-title').textContent = months[month] + ' ' + year;
+
+  const firstDay = new Date(year, month, 1);
+  let startDow = firstDay.getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1;
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+  const today = new Date();
+
+  const grid = document.getElementById('cal-grid');
+  const labels = Array.from(grid.querySelectorAll('.day-label'));
+  grid.innerHTML = '';
+  labels.forEach(l => grid.appendChild(l));
+
+  for (let i = startDow - 1; i >= 0; i--) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell other-month';
+    cell.innerHTML = '<div class="day-num">' + (daysInPrev - i) + '</div>';
+    grid.appendChild(cell);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement('div');
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d;
+    cell.className = 'day-cell' + (isToday ? ' today' : '');
+    cell.innerHTML = '<div class="day-num">' + d + '</div>';
+
+    const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const dayRaces = raceDocs.filter(rd => rd.data.date === dateStr);
+    dayRaces.forEach(rd => {
+      const pill = document.createElement('div');
+      pill.className = 'race-pill';
+      pill.textContent = rd.data.race;
+      pill.onclick = () => openModal(rd.id);
+      cell.appendChild(pill);
+    });
+
+    grid.appendChild(cell);
+  }
+
+  const total = startDow + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= remaining; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell other-month';
+    cell.innerHTML = '<div class="day-num">' + i + '</div>';
+    grid.appendChild(cell);
+  }
+}
+
+function renderRegistrations() {
+  const list = document.getElementById('reg-list');
+  if (raceDocs.length === 0) {
+    list.innerHTML = '<div class="empty">Henüz kayıt yok. İlk yarışı sen ekle!</div>';
+    return;
+  }
+  const sorted = [...raceDocs].sort((a,b) => a.data.date.localeCompare(b.data.date));
+  list.innerHTML = sorted.map(rd => {
+    const r = rd.data;
+    const parts = r.participants.map(p => '<span class="chip">' + p + '</span>').join('');
+    const d = r.date.split('-');
+    const dateStr = d[2] + '.' + d[1] + '.' + d[0];
+    return '<div class="reg-card">' +
+      '<div class="reg-avatar">' + getInitials(r.participants[0]) + '</div>' +
+      '<div class="reg-info">' +
+        '<div class="reg-name">' + r.race + '</div>' +
+        '<div class="reg-detail">📅 ' + dateStr + ' &nbsp; 📍 ' + r.city + '</div>' +
+        '<div class="reg-chips">' + parts + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">' +
+        '<span class="dist-badge">' + r.dist + '</span>' +
+        '<button class="edit-btn" onclick="openEdit(\'' + rd.id + '\')">Düzenle</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+window.openModal = function(docId) {
+  const rd = raceDocs.find(x => x.id === docId);
+  if (!rd) return;
+  const r = rd.data;
+  const d = r.date.split('-');
+  document.getElementById('m-title').textContent = r.race;
+  document.getElementById('m-date').textContent = d[2] + '.' + d[1] + '.' + d[0];
+  document.getElementById('m-city').textContent = r.city;
+  document.getElementById('m-dist').textContent = r.dist;
+  document.getElementById('m-parts').innerHTML = r.participants.map(p =>
+    '<span class="chip">' + p + '</span>').join('');
+  document.getElementById('modal').classList.add('open');
+}
+
+window.closeModal = function() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+window.openEdit = function(docId) {
+  const rd = raceDocs.find(x => x.id === docId);
+  if (!rd) return;
+  const r = rd.data;
+  document.getElementById('e-id').value = docId;
+  document.getElementById('e-race').value = r.race;
+  document.getElementById('e-date').value = r.date;
+  document.getElementById('e-city').value = r.city;
+  document.getElementById('e-dist').value = r.dist;
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+window.closeEditModal = function() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+
+window.saveEdit = async function() {
+  const docId = document.getElementById('e-id').value;
+  const race = document.getElementById('e-race').value.trim();
+  const date = document.getElementById('e-date').value;
+  const city = document.getElementById('e-city').value.trim();
+  const dist = document.getElementById('e-dist').value.trim();
+  if (!race || !date || !city || !dist) {
+    alert('Lütfen tüm alanları doldurun.');
+    return;
+  }
+  try {
+    await updateDoc(doc(db, 'races', docId), { race, date, city, dist });
+    showToast('Kayıt güncellendi!');
+    closeEditModal();
+  } catch(e) {
+    alert('Hata: ' + e.message);
+  }
+}
+
+window.deleteRace = async function() {
+  const docId = document.getElementById('e-id').value;
+  if (!confirm('Bu kaydı silmek istediğine emin misin?')) return;
+  try {
+    await deleteDoc(doc(db, 'races', docId));
+    showToast('Kayıt silindi.');
+    closeEditModal();
+  } catch(e) {
+    alert('Hata: ' + e.message);
+  }
+}
+
+window.toggleCustomDist = function(sel) {
+  const custom = document.getElementById('f-dist-custom');
+  custom.style.display = sel.value === 'Diğer' ? 'block' : 'none';
+  if (sel.value !== 'Diğer') custom.value = '';
+}
+
+window.addRace = async function() {
+  const name = document.getElementById('f-name').value.trim();
+  const race = document.getElementById('f-race').value.trim();
+  const date = document.getElementById('f-date').value;
+  const city = document.getElementById('f-city').value.trim();
+  const selDist = document.getElementById('f-dist').value;
+  const customDist = document.getElementById('f-dist-custom').value.trim();
+  const dist = selDist === 'Diğer' ? (customDist || 'Diğer') : selDist;
+
+  if (!name || !race || !date || !city) {
+    alert('Lütfen tüm alanları doldurun.');
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Kaydediliyor...';
+
+  try {
+    await addDoc(collection(db, 'races'), {
+      race, date, city, dist,
+      participants: [name],
+      createdAt: new Date()
+    });
+
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-race').value = '';
+    document.getElementById('f-date').value = '';
+    document.getElementById('f-city').value = '';
+
+    const [y, m] = date.split('-').map(Number);
+    currentDate = new Date(y, m - 1, 1);
+    showToast('Kayıt başarıyla eklendi!');
+  } catch(e) {
+    alert('Hata oluştu: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Kaydet';
+}
+
+const q = query(collection(db, 'races'), orderBy('createdAt'));
+onSnapshot(q, (snapshot) => {
+  raceDocs = snapshot.docs.map(d => ({ id: d.id, data: d.data() }));
+  renderCalendar();
+  renderRegistrations();
+});
+
+renderCalendar();
+</script>
+</body>
+</html>
